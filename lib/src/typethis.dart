@@ -304,34 +304,42 @@ class _TypeThisState extends State<TypeThis> {
     final textScaler = widget.textScaler ??
         (textScaleFactor != null ? TextScaler.linear(textScaleFactor) : null);
 
-    final subStrEndIndex = currentStep;
-
     List<TextSpan> widgets = <TextSpan>[];
 
+    int renderedTextLength = 0;
     for (int i = 0; i < richTextMappers.length; i++) {
-      final renderedTexts = widgets.map((w) => w.text);
-      final ongoingLength = renderedTexts.join('').length;
+      final currentTextMapperEntry = richTextMappers[i].entries.first;
+      final currentTextMapperContentLength = currentTextMapperEntry.key.length;
 
-      final currentEntry = richTextMappers[i].entries.first;
-      final currentKeyLength = currentEntry.key.length;
-
-      if (ongoingLength + currentKeyLength <= subStrEndIndex) {
+      if (renderedTextLength + currentTextMapperContentLength <= currentStep) {
         widgets.add(
           TextSpan(
-            text: currentEntry.key,
-            style: currentEntry.value,
+            text: currentTextMapperEntry.key,
+            style: currentTextMapperEntry.value,
           ),
         );
+        renderedTextLength += currentTextMapperEntry.key.length;
       } else {
-        final extraSpace = subStrEndIndex - ongoingLength;
-        final currentEntry = richTextMappers[i].entries.first;
+        int extraSpace = currentStep - renderedTextLength;
+
+        final nextCharacterToShow = currentTextMapperEntry.key
+            .substring(extraSpace, extraSpace + 1);
+        if (nextCharacterToShow == ' ') {
+          setState(() {
+            currentStep++;
+          });
+        }
+
+        final writingSequenceText =
+            currentTextMapperEntry.key.substring(0, extraSpace);
 
         widgets.add(
           TextSpan(
-            text: currentEntry.key.substring(0, extraSpace),
-            style: currentEntry.value,
+            text: writingSequenceText,
+            style: currentTextMapperEntry.value,
           ),
         );
+        renderedTextLength += writingSequenceText.length;
         break;
       }
     }
